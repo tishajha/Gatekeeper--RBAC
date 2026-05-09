@@ -4,16 +4,20 @@ A production-grade backend service providing JWT-based authentication, role-base
 
 Built with **FastAPI**, **SQLAlchemy 2.0**, **Pydantic v2**, and **Python 3.10–3.12**.
 
+> **No compatible Python on your machine?** Skip to [Run with Docker](#run-with-docker) — no local Python required.
+
 ---
 
 ## Table of contents
 
 1. [Quick start](#quick-start)
-2. [Project layout](#project-layout)
-3. [API reference](#api-reference)
-4. [Permission matrix](#permission-matrix)
-5. [Running tests](#running-tests)
+2. [Run with Docker](#run-with-docker)
+3. [Project layout](#project-layout)
+4. [API reference](#api-reference)
+5. [Permission matrix](#permission-matrix)
+6. [Running tests](#running-tests)
 
+---
 
 ## Quick start
 
@@ -39,6 +43,34 @@ uvicorn app.main:app --reload
 The API is now live at <http://127.0.0.1:8000>. Interactive Swagger docs at <http://127.0.0.1:8000/docs>.
 
 Default admin credentials (configurable in `.env`): `admin` / `admin123`.
+
+---
+
+## Run with Docker
+
+If you don't have a compatible Python version locally, or just want a one-command setup, use Docker. No Python install required on the host.
+
+**Prerequisite:** Docker Desktop (Windows/Mac) or Docker Engine + Compose plugin (Linux).
+
+```bash
+docker compose up --build
+```
+
+That's it. The first build takes 2–4 minutes (downloads `python:3.12-slim`, builds dependency wheels). Subsequent runs start in seconds because Docker caches each layer.
+
+Once started, the API is at <http://127.0.0.1:8000> and Swagger UI at <http://127.0.0.1:8000/docs>. The default admin user is seeded automatically on first start. SQLite data persists in a named Docker volume between restarts.
+
+Common commands:
+
+```bash
+docker compose up -d              # run in background (detached)
+docker compose logs -f api        # follow logs
+docker compose down               # stop containers (keep DB)
+docker compose down -v            # stop AND wipe the database volume
+docker compose exec api pytest -v # run the test suite inside the container
+```
+
+The Dockerfile uses a multi-stage build (compiler toolchain stays in the builder stage so the final image is ~150 MB), runs as a non-root user, and includes a healthcheck that orchestrators can use to detect readiness.
 
 ---
 
@@ -78,7 +110,10 @@ gatekeeper/
 │   ├── test_users.py
 │   └── test_tasks.py
 ├── postman_collection.json
-├── requirements.txt
+├── requirements.txt          
+├── Dockerfile                   # Multi-stage build, non-root, healthcheck
+├── docker-compose.yml           # One-command setup with persistent volume
+├── .dockerignore
 ├── .env.example
 └── README.md
 ```
@@ -126,6 +161,12 @@ The matrix matches the assignment specification exactly. Note: `Admin` cannot su
 
 ```bash
 pytest -v
+```
+
+Or, if you're using Docker:
+
+```bash
+docker compose exec api pytest -v
 ```
 
 24 tests, all passing. Coverage spans:

@@ -1,0 +1,51 @@
+# Mirrors .gitignore plus a few container-specific exclusions.
+# Anything listed here is NOT copied into the build context, so:
+#  - it can't accidentally leak into the image
+#  - the build is faster (smaller context)
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments — would massively bloat the image
+.venv/
+venv/
+env/
+
+# Secrets — never into a Docker image
+.env
+*.pem
+*.key
+
+# Local DB — built fresh inside the container
+*.db
+*.sqlite
+*.sqlite3
+
+# Git history — not needed at runtime
+.git/
+.gitignore
+.gitattributes
+
+# Editor/IDE/OS noise
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Documentation — keep the image lean. Comment these out if you want
+# the docs available inside the running container.
+*.md
+postman_collection.json
+
+# Docker-related files don't need to be inside the image
+Dockerfile
+docker-compose.yml
+.dockerignore

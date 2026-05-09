@@ -1,0 +1,42 @@
+# GateKeeper — Docker Compose configuration.
+#
+# Usage:
+#   docker compose up --build       # build (or rebuild) and start
+#   docker compose up -d            # detached mode
+#   docker compose logs -f api      # follow logs
+#   docker compose down             # stop and remove containers
+#   docker compose down -v          # also remove the named volume (wipes DB)
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gatekeeper:latest
+    container_name: gatekeeper-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Default values that work out of the box. Override in production
+      # via a .env file, secrets manager, or platform-native config.
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-in-prod-please-use-openssl-rand-hex-32}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      DATABASE_URL: sqlite:////data/gatekeeper.db
+      DEFAULT_ADMIN_USERNAME: admin
+      DEFAULT_ADMIN_PASSWORD: admin123
+    volumes:
+      # Persist the SQLite file outside the container so DB state survives
+      # `docker compose down`. To wipe the DB, run `docker compose down -v`.
+      - gatekeeper-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status == 200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  gatekeeper-data:
+    name: gatekeeper-data
