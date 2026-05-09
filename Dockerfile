@@ -68,6 +68,11 @@ RUN pip install --no-index --find-links=/wheels /wheels/*.whl \
 # and the local SQLite file out of the image.
 COPY --chown=gatekeeper:gatekeeper app/    ./app/
 
+# Create the directory the SQLite volume will mount onto, and make sure
+# the non-root user owns it. Without this step, the volume mounts as
+# root-owned and the app can't write to it.
+RUN mkdir -p /data && chown -R gatekeeper:gatekeeper /data
+
 # Drop root before running the app.
 USER gatekeeper
 
