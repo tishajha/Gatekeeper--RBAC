@@ -8,7 +8,7 @@ Step-by-step instructions to get the project running on a fresh machine.
 
 You need:
 
-- **Python 3.10 or higher** (3.11 or 3.12 recommended). Check with `python --version`.
+- - **Python 3.10, 3.11, or 3.12.** (Python 3.13 and 3.14 are not currently supported — one of our dependencies, `passlib`, relies on the stdlib `crypt` module which was removed in Python 3.13.) Check your version with `python --version`.
 - **pip** (comes with Python).
 - A terminal (Command Prompt / PowerShell on Windows, or any Unix shell).
 
