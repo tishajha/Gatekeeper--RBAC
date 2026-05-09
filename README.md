@@ -2,7 +2,7 @@
 
 A production-grade backend service providing JWT-based authentication, role-based access control over protected APIs, and asynchronous background task execution.
 
-Built with **FastAPI**, **SQLAlchemy 2.0**, **Pydantic v2**, and **Python 3.10+**.
+Built with **FastAPI**, **SQLAlchemy 2.0**, **Pydantic v2**, and **Python 3.10–3.12**.
 
 ---
 
