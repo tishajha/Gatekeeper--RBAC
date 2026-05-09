@@ -1,8 +1,7 @@
 """Pydantic schemas for User-related requests and responses.
 
-We deliberately keep request schemas and response schemas separate. The
-response schema has no `password` field, which makes it impossible to
-accidentally leak a hash through an endpoint.
+Request and response schemas are kept separate. The response schema has no
+`password` field, which makes it impossible to accidentally leak a hash.
 """
 from datetime import datetime
 

@@ -1,19 +1,13 @@
 """Task-related business logic and the in-process task runner.
 
-Architectural note:
-    For this assignment we run background work using FastAPI's
-    `BackgroundTasks` (which schedules a callable on Starlette's threadpool
-    after the response is sent). This keeps the project to a single
-    process — no Celery, no Redis broker — so the reviewer can run it with
-    nothing more than `uvicorn`.
+This module uses FastAPI's BackgroundTasks to run work after the HTTP
+response is returned. Task state is persisted in the database so clients
+can poll for status and results.
 
-    The status of every task is persisted to the database, which means
-    tasks survive across requests and clients can poll for results. The
-    one trade-off vs. a Celery+Redis setup is that in-flight tasks are
-    lost if the API process is killed mid-task; the system would mark
-    them as PENDING/RUNNING forever. A production deployment would swap
-    `run_task_sync` for a Celery `task.delay()` call without changing
-    any other code in this module — the runner registry is the seam.
+If the API process is killed while work is running, that task may remain
+in PENDING/RUNNING state indefinitely. In a production setup this runner
+would be replaced with a queue-based worker system, but the task registry
+keeps the rest of the module unchanged.
 """
 import json
 import time
@@ -33,9 +27,9 @@ from app.schemas.task import TaskCreate
 # Task runner registry
 # ---------------------------------------------------------------------------
 #
-# A `task_type` string from the API is mapped to a callable here. Adding a
-# new task means: write a function, register it. The route layer doesn't
-# need to know what tasks exist.
+# Each `task_type` string maps to a runner function here. To add a new task,
+# define the function and add it to the registry. The route layer stays
+# unaware of the concrete task implementations.
 
 TaskRunner = Callable[[dict[str, Any] | None], dict[str, Any]]
 
@@ -43,9 +37,8 @@ TaskRunner = Callable[[dict[str, Any] | None], dict[str, Any]]
 def _runner_long_computation(payload: dict[str, Any] | None) -> dict[str, Any]:
     """Demo task: sleeps for `duration` seconds (default 5) then returns sum.
 
-    Designed to be obviously asynchronous when the reviewer hits the
-    endpoint — they get an immediate response, then the task completes
-    a few seconds later.
+    This task simulates work so the endpoint returns immediately while the
+    job finishes in the background.
     """
     duration = (payload or {}).get("duration", 5)
     numbers = (payload or {}).get("numbers", [1, 2, 3, 4, 5])
@@ -139,10 +132,8 @@ def set_session_factory(factory) -> None:
 def run_task_sync(task_id: str) -> None:
     """Execute a task and update its row in the database.
 
-    This function is what `BackgroundTasks` schedules. It opens its own DB
-    session because the request-scoped session from `get_db` will already
-    be closed by the time this runs (FastAPI sends the response first,
-    then runs background tasks).
+    BackgroundTasks schedules this after the response is sent. It uses its
+    own DB session because the request session is closed before the task runs.
     """
     db = _session_factory()
     try:

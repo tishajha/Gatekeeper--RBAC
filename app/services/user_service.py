@@ -46,9 +46,9 @@ def create_user(db: Session, payload: UserCreate) -> User:
 def authenticate_user(db: Session, username: str, password: str) -> User | None:
     """Return the user if credentials are valid, else None.
 
-    We deliberately return None for both "no such user" and "wrong password"
-    cases so the caller can return an identical error message — leaking
-    which one failed would help an attacker enumerate valid usernames.
+    This returns None for both missing users and wrong passwords so the
+    caller can keep the error response identical and avoid exposing which
+    part of the login failed.
     """
     user = get_user_by_username(db, username)
     if user is None or not user.is_active:

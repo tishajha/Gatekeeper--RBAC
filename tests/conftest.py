@@ -1,9 +1,7 @@
 """Pytest fixtures shared across the test suite.
 
-The key trick here is `dependency_overrides`: we replace the `get_db`
-dependency at test time so every request uses an isolated in-memory
-SQLite database. This means tests are fast, hermetic, and don't pollute
-the developer's real database.
+Tests replace `get_db` at runtime so the app uses an isolated in-memory
+SQLite database. This keeps tests fast, isolated, and free of side effects.
 """
 from collections.abc import Generator
 

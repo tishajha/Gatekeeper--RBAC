@@ -11,8 +11,7 @@ from app.api.routes import auth, health, tasks, users
 from app.core.config import settings
 from app.db.session import Base, engine
 
-# Importing app.models has the side effect of registering every ORM model
-# with `Base.metadata`, which `create_all` below uses.
+
 import app.models  # noqa: F401
 
 

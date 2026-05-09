@@ -8,9 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class TaskCreate(BaseModel):
     """Payload accepted by `POST /tasks/execute`.
 
-    `task_type` is a free-form string for this assignment; in a real system
-    you'd constrain it to a known enum of task names registered with the
-    worker. `payload` is an arbitrary JSON object passed to the task.
+    `task_type` is a free-form string in this example; in a real system you'd
+    constrain it to an enum of known worker task names. `payload` is an
+    arbitrary JSON object passed to the task.
     """
 
     task_type: str = Field(..., min_length=1, max_length=64)

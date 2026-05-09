@@ -1,8 +1,7 @@
-"""Security primitives: password hashing and JWT token handling.
+"""Security helpers for password hashing and JWT handling.
 
-This module is deliberately framework-agnostic. It does not import FastAPI,
-so the same functions can be reused outside of an HTTP context (e.g. CLI
-seed scripts, admin tooling, tests).
+The code does not import FastAPI so these helpers can be reused from
+non-HTTP contexts such as scripts, tests, or admin tools.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -12,9 +11,9 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
-# Bcrypt is the recommended hashing scheme: deliberately slow, salted by
-# default, and well-supported. `deprecated="auto"` lets passlib transparently
-# rehash on login if we ever change schemes in future.
+# Bcrypt is a solid default: slow by design, salted automatically, and
+# widely supported. `deprecated="auto"` lets passlib rehash hashes when the
+# scheme changes.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -70,6 +69,5 @@ def decode_access_token(token: str) -> dict[str, Any]:
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
-        # Re-raise so the caller (auth dependency) can convert it into a
-        # proper HTTPException with the correct status code and headers.
+        # Re-raise so the auth dependency can turn this into a 401 response.
         raise

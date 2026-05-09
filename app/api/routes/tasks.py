@@ -52,9 +52,8 @@ def get_task_status(
 ) -> TaskRead:
     """Fetch the status and (if available) result of a task.
 
-    Accessible to any authenticated user — per the assignment spec. In a
-    production system you'd typically restrict this to the task's creator
-    or admins; that change would be a one-line filter here.
+    Any authenticated user may read task status. In a production system
+    you'd normally restrict this to the task's creator or admins.
     """
     task = task_service.get_task(db, task_id)
     if task is None:
