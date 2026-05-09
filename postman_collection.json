@@ -1,0 +1,192 @@
+{
+  "info": {
+    "name": "GateKeeper RBAC Execution Platform",
+    "_postman_id": "gatekeeper-rbac-2026",
+    "description": "Postman collection for the GateKeeper RBAC Execution Platform. Run requests in order: Health -> Login (sets {{token}}) -> the rest.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "manager_token", "value": "" },
+    { "key": "task_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health (public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "Login as Admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('token', json.access_token);",
+              "pm.test('Got an access token', () => pm.expect(json.access_token).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "username", "value": "admin", "type": "text" },
+            { "key": "password", "value": "admin123", "type": "text" }
+          ]
+        },
+        "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+      }
+    },
+    {
+      "name": "Create User (Admin only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"manager_one\",\n  \"password\": \"managerpass\",\n  \"role\": \"manager\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/users/", "host": ["{{base_url}}"], "path": ["users", ""] }
+      }
+    },
+    {
+      "name": "List Users (Admin or Manager)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/users/", "host": ["{{base_url}}"], "path": ["users", ""] }
+      }
+    },
+    {
+      "name": "Login as Manager",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('manager_token', json.access_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "username", "value": "manager_one", "type": "text" },
+            { "key": "password", "value": "managerpass", "type": "text" }
+          ]
+        },
+        "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+      }
+    },
+    {
+      "name": "Submit Task: long_computation (Manager only)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('task_id', json.task_id);",
+              "pm.test('Got task_id', () => pm.expect(json.task_id).to.be.a('string'));",
+              "pm.test('Status is pending', () => pm.expect(json.status).to.eql('pending'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{manager_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"task_type\": \"long_computation\",\n  \"payload\": {\n    \"duration\": 3,\n    \"numbers\": [10, 20, 30]\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/tasks/execute", "host": ["{{base_url}}"], "path": ["tasks", "execute"] }
+      }
+    },
+    {
+      "name": "Submit Task: echo (Manager only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{manager_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"task_type\": \"echo\",\n  \"payload\": {\n    \"hello\": \"world\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/tasks/execute", "host": ["{{base_url}}"], "path": ["tasks", "execute"] }
+      }
+    },
+    {
+      "name": "Get Task Status (any authenticated user)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{manager_token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+      }
+    },
+    {
+      "name": "RBAC negative test: Manager tries to create user (expect 403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{manager_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"should_fail\",\n  \"password\": \"password\",\n  \"role\": \"viewer\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/users/", "host": ["{{base_url}}"], "path": ["users", ""] }
+      }
+    },
+    {
+      "name": "RBAC negative test: Admin tries to submit task (expect 403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"task_type\": \"echo\",\n  \"payload\": {}\n}"
+        },
+        "url": { "raw": "{{base_url}}/tasks/execute", "host": ["{{base_url}}"], "path": ["tasks", "execute"] }
+      }
+    }
+  ]
+}
